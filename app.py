@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Rekap ITV Akurat", layout="wide")
+st.set_page_config(page_title="Rekap ITV", layout="wide")
 
-st.title("🚢 Rekap ITV (Grid Detector)")
-st.write("Rekap otomatis sesuai layout manning & deployment.")
+st.title("🚢 Rekap ITV (Smart Detector)")
 
 uploaded_files = st.file_uploader(
     "Upload file Excel",
@@ -14,17 +13,9 @@ uploaded_files = st.file_uploader(
 
 rekap_data = []
 
-# ==============================
-# FUNCTION CEK ANGKA
-# ==============================
-def clean_num(val):
-    val = str(val).replace(".0", "").strip()
-    return val
+def clean(v):
+    return str(v).replace(".0", "").strip()
 
-
-# ==============================
-# PROCESS FILE
-# ==============================
 if uploaded_files:
 
     for file in uploaded_files:
@@ -35,51 +26,18 @@ if uploaded_files:
 
             rows, cols = df.shape
 
-            # SCAN SEMUA GRID
-            for i in range(rows - 1):
-                for j in range(cols - 1):
+            for i in range(rows):
+                for j in range(cols):
 
-                    trailer = clean_num(df.iloc[i, j])
-                    id_val  = clean_num(df.iloc[i+1, j])
-                    nama    = str(df.iloc[i+1, j+1]).strip()
+                    trailer = clean(df.iloc[i, j])
 
-                    # RULE VALIDASI
-                    if trailer.isdigit() and len(trailer) == 3 and \
-                       id_val.isdigit() and len(id_val) == 4 and \
-                       nama not in ["nan", ""] and \
-                       not nama.isdigit():
+                    # cari ITV (3 digit)
+                    if trailer.isdigit() and len(trailer) == 3:
 
-                        rekap_data.append({
-                            "Tanggal": file.name[:10],
-                            "Shift": sheet_name,
-                            "No Trailer": trailer,
-                            "ID": id_val,
-                            "Nama": nama
-                        })
+                        # cek kemungkinan posisi ID + Nama di bawah
+                        if i+1 < rows and j+1 < cols:
 
-# ==============================
-# OUTPUT
-# ==============================
-if len(rekap_data) > 0:
+                            id_val = clean(df.iloc[i+1, j])
+                            nama = clean(df.iloc[i+1, j+1])
 
-    df_rekap = pd.DataFrame(rekap_data)
-
-    # buang duplikat
-    df_rekap = df_rekap.drop_duplicates()
-
-    st.success(f"✅ Total operator terdeteksi: {len(df_rekap)}")
-
-    st.dataframe(df_rekap, use_container_width=True)
-
-    # DOWNLOAD
-    csv = df_rekap.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        "⬇️ Download Rekap CSV",
-        csv,
-        "rekap_itv_final.csv",
-        "text/csv"
-    )
-
-else:
-    st.warning("⚠️ Tidak ada data ITV terdeteksi.")
+                            if id_val.isdigit() and len(id_val) == 4 and \
