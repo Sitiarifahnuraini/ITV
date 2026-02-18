@@ -44,4 +44,4 @@ if uploaded_files:
                     # pola data:
                     # Trailer = 3 digit
                     # ID = 4 digit
-                    if re.ma
+                    if re.ma :
