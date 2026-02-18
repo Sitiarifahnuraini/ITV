@@ -2,21 +2,18 @@ import streamlit as st
 import pandas as pd
 import re
 
-st.set_page_config(page_title="ITV Recap System", layout="wide")
+st.set_page_config(page_title="Rekap ITV", layout="wide")
 
-st.title("🚢 Rekap ITV - Area Plotting Lapangan")
+st.title("🚢 Rekap ITV (Tanpa Mengubah Isi)")
 
 uploaded_files = st.file_uploader(
-    "Upload file Excel (harian / 3 shift)",
+    "Upload file Excel",
     type=["xlsx"],
     accept_multiple_files=True
 )
 
-all_data = []
+rekap_data = []
 
-# ===================================
-# PROCESS FILE
-# ===================================
 if uploaded_files:
 
     for file in uploaded_files:
@@ -25,43 +22,36 @@ if uploaded_files:
 
         for sheet_name, df in sheets.items():
 
+            # scan seluruh isi sheet
             for i in range(len(df)):
                 for j in range(len(df.columns)-2):
 
-                    trailer = str(df.iloc[i, j]).strip()
-                    id_val  = str(df.iloc[i, j+1]).strip()
-                    nama    = str(df.iloc[i, j+2]).strip()
+                    val1 = df.iloc[i, j]
+                    val2 = df.iloc[i, j+1]
+                    val3 = df.iloc[i, j+2]
 
-                    # ===============================
-                    # FILTER KHUSUS AREA PLOTTING LAPANGAN
-                    # ===============================
-                    if re.match(r"^\d{3}$", trailer) and \
-                       re.match(r"^\d{4}$", id_val) and \
-                       nama not in ["nan", ""]:
+                    # hanya ambil yang punya trailer + id
+                    if str(val1).isdigit() and len(str(val1)) == 3 and \
+                       str(val2).isdigit() and len(str(val2)) == 4 and \
+                       pd.notna(val3):
 
-                        all_data.append({
+                        rekap_data.append({
                             "Tanggal": file.name[:10],
                             "Shift": sheet_name,
-                            "Nama": nama,
-                            "ID": id_val,
-                            "No Trailer": trailer
+                            "No Trailer": val1,
+                            "ID": val2,
+                            "Nama": val3
                         })
 
-# ===================================
-# OUTPUT
-# ===================================
-if all_data:
+if rekap_data:
 
-    master_df = pd.DataFrame(all_data)
+    hasil = pd.DataFrame(rekap_data)
 
-    # hapus duplikat
-    master_df = master_df.drop_duplicates()
+    st.success("✅ Rekap selesai (isi data tidak diubah)")
 
-    st.success("✅ Rekap hanya operator yang mendapat ITV")
+    st.dataframe(hasil, use_container_width=True)
 
-    st.dataframe(master_df, use_container_width=True)
-
-    csv = master_df.to_csv(index=False).encode("utf-8")
+    csv = hasil.to_csv(index=False).encode("utf-8")
 
     st.download_button(
         "⬇️ Download Rekap",
@@ -69,6 +59,5 @@ if all_data:
         "rekap_itv.csv",
         "text/csv"
     )
-
 else:
     st.info("Upload file untuk mulai rekap.")
