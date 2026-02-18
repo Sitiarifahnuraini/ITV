@@ -75,3 +75,7 @@ if rekap_data:
         csv,
         "rekap_itv.csv",
         "text/csv"
+    )
+
+else:
+    st.info("Upload file untuk mulai rekap.")
